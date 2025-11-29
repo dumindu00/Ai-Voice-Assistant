@@ -1,14 +1,32 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {  LiveKitRoom, 
     RoomAudioRenderer}
  from "@livekit/components-react";
 import "@livekit/components-styles"
+import SimpleVoiceAssistant from "./SimpleVoiceAssistant";
 
 const LiveKitModal = ({setShowSupport}) => {
     const [isSubmittingName, setIsSubmittingName] = useState(true);
     const [name, setName] = useState("");
+    const [token, setToken] = useState("");
 
-    const handleNameSubmit = () => {};
+    const getToken = useCallback(async (userName) => {
+        try {
+            const response = await fetch(`/api/getToken?name=${encodeURIComponent(userName)}`)
+            const token = await response.text()
+            setToken(token)
+            setIsSubmittingName(false)
+        } catch (error) {
+            console.error(error)
+        }
+    }, [])
+
+    const handleNameSubmit = (e) => {
+        e.preventDefault()
+        if (name.trim()) {
+            getToken(name)
+        }
+    };
 
     return (
         <div className="modal-overlay">
@@ -36,10 +54,10 @@ const LiveKitModal = ({setShowSupport}) => {
                                 Cancel
                             </button>
                         </form>
-                    ): (
+                    ): token ? (
                         <LiveKitRoom
                             serverUrl={import.meta.env.VITE_LIVEKIT_URL}
-                            token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjQzNTI3NDMsImlkZW50aXR5IjoiZHYiLCJpc3MiOiJBUEl5Q0RpOGdTak1Tc04iLCJuYmYiOjE3NjQzNTE4NDMsInN1YiI6ImR2IiwidmlkZW8iOnsiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwicm9vbSI6InJvb20xIiwicm9vbUpvaW4iOnRydWV9fQ.-vdW3l5IR0pMN1c8ZBpEJPw0vdxZehIueK9aGDn2CF0"
+                            token={token}
                             connect={true}
                             video={false}
                             audio={true}
@@ -49,8 +67,9 @@ const LiveKitModal = ({setShowSupport}) => {
                             }}
                         >
                             <RoomAudioRenderer    />
+                            <SimpleVoiceAssistant />
                         </LiveKitRoom>
-                    )}
+                    ): null}
                 </div>
             </div>
         </div>
